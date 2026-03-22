@@ -19,7 +19,11 @@ export default function ListsPage() {
   return (
     <Container sx={{ py: 4 }}>
       <Stack spacing={3}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
           <Typography variant="h1">Lists</Typography>
           <Link href="/lists/new" style={{ textDecoration: "none" }}>
             <Button variant="contained">Create list</Button>
@@ -36,7 +40,11 @@ export default function ListsPage() {
               <Card>
                 <CardActionArea>
                   <CardContent>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
                       <Typography variant="h3">{list.name}</Typography>
                       <Typography variant="body2" color="text.secondary">
                         {list.wordCount} words
