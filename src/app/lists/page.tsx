@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Button,
   Card,
@@ -8,14 +10,12 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-
-const MOCK_LISTS = [
-  { id: "1", name: "Basic Verbs", wordCount: 20 },
-  { id: "2", name: "Travel Vocabulary", wordCount: 35 },
-  { id: "3", name: "Business English", wordCount: 50 },
-];
+import { useAppStore } from "@/shared/model/store/store";
 
 export default function ListsPage() {
+  const lists = useAppStore((state) => state.lists);
+  const getListWords = useAppStore((state) => state.getListWords);
+
   return (
     <Container sx={{ py: 4 }}>
       <Stack spacing={3}>
@@ -31,7 +31,10 @@ export default function ListsPage() {
         </Stack>
 
         <Stack spacing={2}>
-          {MOCK_LISTS.map((list) => (
+          {lists.length === 0 && (
+            <Typography variant="body1">No lists found</Typography>
+          )}
+          {lists.map((list) => (
             <Link
               key={list.id}
               href={`/lists/${list.id}`}
@@ -47,7 +50,7 @@ export default function ListsPage() {
                     >
                       <Typography variant="h3">{list.name}</Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {list.wordCount} words
+                        {getListWords(list.id).length} words
                       </Typography>
                     </Stack>
                   </CardContent>
