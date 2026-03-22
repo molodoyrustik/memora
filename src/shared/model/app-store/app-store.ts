@@ -209,25 +209,4 @@ export function createAppStore() {
   );
 }
 
-export const appStoreSelectors = {
-  getList: (listId: ListId) => (state: AppStore) =>
-    state.lists.find((l) => l.id === listId),
-  getListWords: (listId: ListId) => (state: AppStore) =>
-    state.words.filter((w) => w.listId === listId),
-  getSelectionQueue: (listId: ListId) => (state: AppStore) =>
-    state.words.filter((w) => w.listId === listId && w.status === "new"),
-  getEncodingQueue: (listId: ListId) => (state: AppStore) =>
-    state.words.filter((w) => w.listId === listId && w.status === "selected"),
-  getSkippedQueue: (listId: ListId) => (state: AppStore) =>
-    state.words.filter((w) => w.listId === listId && w.status === "skipped"),
-  getRecallQueue: (listId: ListId) => (state: AppStore) =>
-    state.words.filter(
-      (w) =>
-        w.listId === listId &&
-        (w.status === "encoded" ||
-          w.status === "learning" ||
-          w.status === "weak"),
-    ),
-};
-
 export type AppStoreApi = ReturnType<typeof createAppStore>;
