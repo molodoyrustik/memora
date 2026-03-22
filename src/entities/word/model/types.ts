@@ -1,28 +1,24 @@
-import type { ListId } from '@/entities/list/model/types';
-
-export type WordId = string;
-
-export type WordType = 'image_noun';
+export type WordType = "image_noun";
 
 export type WordStatus =
-  | 'new'
-  | 'selected'
-  | 'rejected'
-  | 'skipped'
-  | 'encoded'
-  | 'learning'
-  | 'weak'
-  | 'mastered';
+  | "new"
+  | "selected"
+  | "rejected"
+  | "skipped"
+  | "encoded"
+  | "learning"
+  | "weak"
+  | "mastered";
 
 export type SelectionDecision =
-  | 'unknown_and_needed'
-  | 'already_known'
-  | 'not_needed'
+  | "unknown_and_needed"
+  | "already_known"
+  | "not_needed"
   | null;
 
 export type Word = {
-  id: WordId;
-  listId: ListId;
+  id: string;
+  listId: string;
   ru: string;
   en: string;
   type: WordType;
