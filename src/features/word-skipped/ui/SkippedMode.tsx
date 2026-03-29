@@ -9,9 +9,9 @@ import {
   StepImageCheck,
   StepSceneCreation,
   StepSoundEncoding,
-} from "./encoding-steps";
+} from "@/features/word-encoding/ui/encoding-steps";
 
-type EncodingModeProps = {
+type SkippedModeProps = {
   listId: string;
 };
 
@@ -21,11 +21,13 @@ function CompletionState({ listId, empty }: { listId: string; empty?: boolean })
   return (
     <Stack spacing={3} alignItems="center" justifyContent="center" sx={{ minHeight: "60vh" }}>
       <Stack spacing={1} alignItems="center">
-        <Typography variant="h2">{empty ? "Nothing to encode" : "Encoding complete"}</Typography>
+        <Typography variant="h2">
+          {empty ? "No skipped words" : "Skipped words complete"}
+        </Typography>
         <Typography variant="body1" color="text.secondary" textAlign="center">
           {empty
-            ? "There are no selected words in this list."
-            : "All selected words have been processed."}
+            ? "There are no skipped words in this list."
+            : "All skipped words have been processed."}
         </Typography>
       </Stack>
       <Link href={`/lists/${listId}`} style={{ textDecoration: "none" }}>
@@ -35,7 +37,7 @@ function CompletionState({ listId, empty }: { listId: string; empty?: boolean })
   );
 }
 
-export function EncodingMode({ listId }: EncodingModeProps) {
+export function SkippedMode({ listId }: SkippedModeProps) {
   const allWords = useAppStore((state) => state.words);
   const setMeaningVisualization = useAppStore((state) => state.setMeaningVisualization);
   const saveEncoding = useAppStore((state) => state.saveEncoding);
@@ -44,7 +46,7 @@ export function EncodingMode({ listId }: EncodingModeProps) {
   const allWordsRef = useRef(allWords);
   const [queue, setQueue] = useState<string[]>(() =>
     allWordsRef.current
-      .filter((w) => w.listId === listId && w.status === "selected")
+      .filter((w) => w.listId === listId && w.status === "skipped")
       .map((w) => w.id),
   );
 
@@ -71,15 +73,15 @@ export function EncodingMode({ listId }: EncodingModeProps) {
     resetInputs();
   }
 
+  // Step 1 — differs from EncodingMode: skip does NOT call setMeaningVisualization(false)
   function handleHasImage() {
     if (!currentId) return;
     setMeaningVisualization(currentId, true);
     setStep(2);
   }
 
-  function handleNoImage() {
+  function handleImageSkip() {
     if (!currentId) return;
-    setMeaningVisualization(currentId, false);
     skipWord(currentId);
     moveToNext();
   }
@@ -130,10 +132,39 @@ export function EncodingMode({ listId }: EncodingModeProps) {
         </Stack>
       </Stack>
 
-      {step === 1 && <StepImageCheck word={current} onHasImage={handleHasImage} onSkip={handleNoImage} />}
-      {step === 2 && <StepSoundEncoding word={current} value={soundAssociation} onChange={setSoundAssociation} onNext={handleSoundNext} onSkip={handleSoundSkip} />}
-      {step === 3 && <StepSceneCreation value={sceneDescription} onChange={setSceneDescription} onSave={handleSceneSave} onSkip={handleSceneSkip} />}
-      {step === 4 && <StepFixation word={current} soundAssociation={soundAssociation} sceneDescription={sceneDescription} onDone={handleDone} />}
+      {step === 1 && (
+        <StepImageCheck
+          word={current}
+          hint="Попробуй ещё раз"
+          onHasImage={handleHasImage}
+          onSkip={handleImageSkip}
+        />
+      )}
+      {step === 2 && (
+        <StepSoundEncoding
+          word={current}
+          value={soundAssociation}
+          onChange={setSoundAssociation}
+          onNext={handleSoundNext}
+          onSkip={handleSoundSkip}
+        />
+      )}
+      {step === 3 && (
+        <StepSceneCreation
+          value={sceneDescription}
+          onChange={setSceneDescription}
+          onSave={handleSceneSave}
+          onSkip={handleSceneSkip}
+        />
+      )}
+      {step === 4 && (
+        <StepFixation
+          word={current}
+          soundAssociation={soundAssociation}
+          sceneDescription={sceneDescription}
+          onDone={handleDone}
+        />
+      )}
     </Stack>
   );
 }
