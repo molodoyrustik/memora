@@ -1,18 +1,11 @@
-import { Card, CardContent, Stack, Typography } from "@mui/material";
+import { RecallMode } from "@/features/word-recall";
 
-export default function RecallPage() {
-  return (
-    <Stack alignItems="center" justifyContent="center" sx={{ minHeight: "60vh" }}>
-      <Card sx={{ width: "100%" }}>
-        <CardContent>
-          <Stack spacing={2} alignItems="center">
-            <Typography variant="h2">Recall Mode</Typography>
-            <Typography variant="body1" color="text.secondary">
-              Test yourself — recall the words from memory.
-            </Typography>
-          </Stack>
-        </CardContent>
-      </Card>
-    </Stack>
-  );
+type RecallPageProps = {
+  params: Promise<{ listId: string }>;
+};
+
+export default async function RecallPage({ params }: RecallPageProps) {
+  const { listId } = await params;
+
+  return <RecallMode listId={listId} />;
 }
