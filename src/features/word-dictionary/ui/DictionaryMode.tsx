@@ -2,47 +2,32 @@
 
 import { Button, Stack, Typography } from "@mui/material";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  getEncodingTimeLimit,
-  getTimedPassNumber,
-  useAppStore,
-} from "@/shared/model/app-store";
+import { useMemo, useRef, useState } from "react";
+import { isInDictionaryQueue, useAppStore } from "@/shared/model/app-store";
 import {
   StepFixation,
   StepImageCheck,
   StepSceneCreation,
   StepSoundEncoding,
-} from "./encoding-steps";
+} from "@/features/word-encoding/ui/encoding-steps";
 
-type EncodingModeProps = {
+type DictionaryModeProps = {
   listId: string;
 };
 
 type Step = 1 | 2 | 3 | 4;
 
-function CompletionState({
-  listId,
-  empty,
-}: {
-  listId: string;
-  empty?: boolean;
-}) {
+function CompletionState({ listId, empty }: { listId: string; empty?: boolean }) {
   return (
-    <Stack
-      spacing={3}
-      alignItems="center"
-      justifyContent="center"
-      sx={{ minHeight: "60vh" }}
-    >
+    <Stack spacing={3} alignItems="center" justifyContent="center" sx={{ minHeight: "60vh" }}>
       <Stack spacing={1} alignItems="center">
         <Typography variant="h2">
-          {empty ? "Nothing to encode" : "Encoding complete"}
+          {empty ? "Dictionary queue is empty" : "Dictionary queue complete"}
         </Typography>
         <Typography variant="body1" color="text.secondary" textAlign="center">
           {empty
-            ? "There are no selected words in this list."
-            : "All selected words have been processed."}
+            ? "No words have reached the dictionary queue yet."
+            : "All difficult words have been processed."}
         </Typography>
       </Stack>
       <Link href={`/lists/${listId}`} style={{ textDecoration: "none" }}>
@@ -52,20 +37,17 @@ function CompletionState({
   );
 }
 
-export function EncodingMode({ listId }: EncodingModeProps) {
+export function DictionaryMode({ listId }: DictionaryModeProps) {
   const allWords = useAppStore((state) => state.words);
-  const setMeaningVisualization = useAppStore(
-    (state) => state.setMeaningVisualization,
-  );
+  const setMeaningVisualization = useAppStore((state) => state.setMeaningVisualization);
   const saveEncoding = useAppStore((state) => state.saveEncoding);
   const skipWord = useAppStore((state) => state.skipWord);
 
+  // Capture session queue once on mount — dictionary words (skipped, round === 3)
   const allWordsRef = useRef(allWords);
-  allWordsRef.current = allWords;
-
   const [queue, setQueue] = useState<string[]>(() =>
     allWordsRef.current
-      .filter((w) => w.listId === listId && w.status === "selected")
+      .filter((w) => w.listId === listId && isInDictionaryQueue(w))
       .map((w) => w.id),
   );
 
@@ -73,19 +55,12 @@ export function EncodingMode({ listId }: EncodingModeProps) {
   const [soundAssociation, setSoundAssociation] = useState("");
   const [sceneDescription, setSceneDescription] = useState("");
   const [doneCount, setDoneCount] = useState(0);
-  const [secondsLeft, setSecondsLeft] = useState(10);
 
-  const wordsMap = useMemo(
-    () => new Map(allWords.map((w) => [w.id, w])),
-    [allWords],
-  );
+  const wordsMap = useMemo(() => new Map(allWords.map((w) => [w.id, w])), [allWords]);
 
   const total = queue.length;
   const currentId = queue[0] ?? null;
   const current = currentId ? (wordsMap.get(currentId) ?? null) : null;
-
-  const skipWordRef = useRef(skipWord);
-  skipWordRef.current = skipWord;
 
   function resetInputs() {
     setSoundAssociation("");
@@ -99,38 +74,16 @@ export function EncodingMode({ listId }: EncodingModeProps) {
     resetInputs();
   }
 
-  const moveToNextRef = useRef(moveToNext);
-  moveToNextRef.current = moveToNext;
-
-  useEffect(() => {
-    if (!currentId) return;
-    const word = allWordsRef.current.find((w) => w.id === currentId);
-    if (!word) return;
-    const sec = getEncodingTimeLimit(word) ?? 10;
-    setSecondsLeft(sec);
-    const ms = sec * 1000;
-    const tick = setInterval(() => {
-      setSecondsLeft((s) => (s <= 1 ? 0 : s - 1));
-    }, 1000);
-    const t = setTimeout(() => {
-      skipWordRef.current(currentId);
-      moveToNextRef.current();
-    }, ms);
-    return () => {
-      clearInterval(tick);
-      clearTimeout(t);
-    };
-  }, [currentId]);
-
+  // Step 1 — no setMeaningVisualization(false) on skip (word stays in dictionary)
   function handleHasImage() {
     if (!currentId) return;
     setMeaningVisualization(currentId, true);
     setStep(2);
   }
 
-  function handleNoImage() {
+  function handleImageSkip() {
     if (!currentId) return;
-    setMeaningVisualization(currentId, false);
+    // skipWord keeps round at 3 (cap), word stays in dictionary queue
     skipWord(currentId);
     moveToNext();
   }
@@ -169,22 +122,14 @@ export function EncodingMode({ listId }: EncodingModeProps) {
   if (total === 0) return <CompletionState listId={listId} empty />;
   if (!current) return <CompletionState listId={listId} />;
 
-  const passUi = getTimedPassNumber(current) ?? 1;
-  const limitSec = getEncodingTimeLimit(current) ?? 10;
-
   return (
     <Stack spacing={3}>
+      {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center">
         <Link href={`/lists/${listId}`} style={{ textDecoration: "none" }}>
-          <Button variant="text" size="small" sx={{ px: 0, minHeight: "auto" }}>
-            ← Back
-          </Button>
+          <Button variant="text" size="small" sx={{ px: 0, minHeight: "auto" }}>← Back</Button>
         </Link>
-        <Stack alignItems="flex-end" spacing={0.25}>
-          <Typography variant="caption" color="text.secondary" fontWeight={600}>
-            Pass {passUi} — {limitSec}s
-            {secondsLeft > 0 ? ` · ${secondsLeft}s` : ""}
-          </Typography>
+        <Stack alignItems="flex-end">
           <Typography variant="caption" color="text.secondary">
             {doneCount + 1} / {total}
           </Typography>
@@ -194,11 +139,18 @@ export function EncodingMode({ listId }: EncodingModeProps) {
         </Stack>
       </Stack>
 
+      {/* Helper hint — no timer in this mode */}
+      <Typography variant="body2" color="text.secondary" textAlign="center">
+        Используй словарь для поиска подходящей ассоциации
+      </Typography>
+
+      {/* Step content */}
       {step === 1 && (
         <StepImageCheck
           word={current}
+          hint="Попробуй ещё раз — без таймера"
           onHasImage={handleHasImage}
-          onSkip={handleNoImage}
+          onSkip={handleImageSkip}
         />
       )}
       {step === 2 && (

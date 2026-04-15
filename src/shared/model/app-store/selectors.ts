@@ -1,6 +1,12 @@
 import { useCallback } from "react";
+import type { Word } from "@/entities/word";
 import { useAppStore } from "./AppStoreProvider";
 import type { AppStore } from "./app-store";
+import {
+  isInDictionaryQueue,
+  isInEncodingQueue,
+  isInSkippedQueue,
+} from "./app-store";
 
 export const listsSelector = (state: AppStore) => state.lists;
 export const wordsSelector = (state: AppStore) => state.words;
@@ -20,4 +26,28 @@ export function useAppStoreSelectors() {
     words,
     getWordsByListId,
   };
+}
+
+// --- Derived queues (list-scoped) ---
+
+export function selectEncodingQueueWords(
+  words: Word[],
+  listId: string,
+): Word[] {
+  return words.filter((w) => w.listId === listId && isInEncodingQueue(w));
+}
+
+/** Skipped Mode: Pass 2 + Pass 3 timed queues only (not dictionary) */
+export function selectSkippedTimedQueueWords(
+  words: Word[],
+  listId: string,
+): Word[] {
+  return words.filter((w) => w.listId === listId && isInSkippedQueue(w));
+}
+
+export function selectDictionaryQueueWords(
+  words: Word[],
+  listId: string,
+): Word[] {
+  return words.filter((w) => w.listId === listId && isInDictionaryQueue(w));
 }

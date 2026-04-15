@@ -1,1 +1,5 @@
-export type { SelectionDecision, Word } from "./model/types";
+export type {
+  EncodingAttemptRound,
+  SelectionDecision,
+  Word,
+} from "./model/types";

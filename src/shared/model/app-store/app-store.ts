@@ -4,7 +4,7 @@ import type { List } from "@/entities/list";
 import type { SelectionDecision, Word } from "@/entities/word";
 import { nowISO } from "@/shared/lib/date";
 
-import { makeList, makeWord, patchWord } from "./utils";
+import { makeList, makeWord, nextEncodingRound, patchWord } from "./utils";
 
 // ---------------------------------------------------------------------------
 // State shape
@@ -144,17 +144,26 @@ export function createAppStore() {
           set((s) => {
             const word = s.words.find((w) => w.id === wordId);
             if (!word) return s;
+            const r = word.encodingAttemptRound;
+            const encodingAttemptRound =
+              r == null ? 1 : r === 1 ? 2 : r === 2 ? 3 : 3;
             return {
               words: patchWord(s.words, wordId, {
                 soundAssociation,
                 sceneDescription,
                 status: "encoded",
                 encodingAttemptCount: word.encodingAttemptCount + 1,
+                encodingAttemptRound,
               }),
             };
           });
         },
 
+        // Skip advances encodingAttemptRound:
+        //   null → 1 (will appear in timed pass 2: 15s)
+        //   1    → 2 (will appear in timed pass 3: 25s)
+        //   2    → 3 (will appear in dictionary queue, no timer)
+        //   3    → 3 (stays in dictionary queue)
         skipWord: (wordId) => {
           set((s) => {
             const word = s.words.find((w) => w.id === wordId);
@@ -164,6 +173,9 @@ export function createAppStore() {
                 status: "skipped",
                 skipCount: word.skipCount + 1,
                 encodingAttemptCount: word.encodingAttemptCount + 1,
+                encodingAttemptRound: nextEncodingRound(
+                  word.encodingAttemptRound,
+                ),
               }),
             };
           });
@@ -210,3 +222,22 @@ export function createAppStore() {
 }
 
 export type AppStoreApi = ReturnType<typeof createAppStore>;
+
+// ---------------------------------------------------------------------------
+// Derived queue helpers (used in components via state.words)
+// ---------------------------------------------------------------------------
+
+// Encoding queue (Pass 1): selected words, 10s timer in UI
+export function isInEncodingQueue(word: Word): boolean {
+  return word.status === "selected";
+}
+
+// Skipped queue (Pass 2 & 3): timed retries — round 1 → 15s, round 2 → 25s
+export function isInSkippedQueue(word: Word): boolean {
+  return word.status === "skipped" && word.encodingAttemptRound !== 3;
+}
+
+// Dictionary queue: words skipped through all 3 passes — no timer
+export function isInDictionaryQueue(word: Word): boolean {
+  return word.status === "skipped" && word.encodingAttemptRound === 3;
+}

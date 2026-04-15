@@ -13,7 +13,12 @@ import {
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { WordStatus } from "@/entities/word/model/types";
-import { useAppStore } from "@/shared/model/app-store";
+import {
+  isInDictionaryQueue,
+  isInEncodingQueue,
+  isInSkippedQueue,
+  useAppStore,
+} from "@/shared/model/app-store";
 
 type ListDetailsProps = {
   listId: string;
@@ -65,12 +70,10 @@ export function ListDetails({ listId }: ListDetailsProps) {
     () => words.filter((w) => w.status === "new"),
     [words],
   );
-  const encodingQueue = useMemo(
-    () => words.filter((w) => w.status === "selected"),
-    [words],
-  );
-  const skippedQueue = useMemo(
-    () => words.filter((w) => w.status === "skipped"),
+  const encodingQueue = useMemo(() => words.filter(isInEncodingQueue), [words]);
+  const skippedQueue = useMemo(() => words.filter(isInSkippedQueue), [words]);
+  const dictionaryQueue = useMemo(
+    () => words.filter(isInDictionaryQueue),
     [words],
   );
   const recallQueue = useMemo(
@@ -129,6 +132,7 @@ export function ListDetails({ listId }: ListDetailsProps) {
       label: "Mastered",
       count: words.filter((w) => w.status === "mastered").length,
     },
+    { label: "Dictionary", count: dictionaryQueue.length },
   ];
 
   const modes = [
@@ -149,6 +153,12 @@ export function ListDetails({ listId }: ListDetailsProps) {
       href: "skipped",
       count: skippedQueue.length,
       active: skippedQueue.length > 0,
+    },
+    {
+      label: "Dictionary Queue",
+      href: "dictionary",
+      count: dictionaryQueue.length,
+      active: dictionaryQueue.length > 0,
     },
     {
       label: "Recall Mode",
