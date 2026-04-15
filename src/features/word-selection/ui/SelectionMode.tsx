@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Button,
-  Card,
-  CardContent,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Button, Card, CardContent, Stack, Typography } from "@mui/material";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { useAppStore } from "@/shared/model/app-store";
@@ -40,7 +34,7 @@ export function SelectionMode({ listId }: SelectionModeProps) {
   const [processed, setProcessed] = useState(0);
 
   const currentId = queue[0] ?? null;
-  const current = currentId ? wordsMap.get(currentId) ?? null : null;
+  const current = currentId ? (wordsMap.get(currentId) ?? null) : null;
   const isFinished = queue.length === 0;
 
   function handleNeedToLearn() {
@@ -64,7 +58,12 @@ export function SelectionMode({ listId }: SelectionModeProps) {
 
   if (total === 0) {
     return (
-      <Stack spacing={3} alignItems="center" justifyContent="center" sx={{ minHeight: "60vh" }}>
+      <Stack
+        spacing={3}
+        alignItems="center"
+        justifyContent="center"
+        sx={{ minHeight: "60vh" }}
+      >
         <Stack spacing={1} alignItems="center">
           <Typography variant="h2">Nothing to select</Typography>
           <Typography variant="body1" color="text.secondary" textAlign="center">
@@ -80,7 +79,12 @@ export function SelectionMode({ listId }: SelectionModeProps) {
 
   if (isFinished) {
     return (
-      <Stack spacing={3} alignItems="center" justifyContent="center" sx={{ minHeight: "60vh" }}>
+      <Stack
+        spacing={3}
+        alignItems="center"
+        justifyContent="center"
+        sx={{ minHeight: "60vh" }}
+      >
         <Stack spacing={1} alignItems="center">
           <Typography variant="h2">Selection complete</Typography>
           <Typography variant="body1" color="text.secondary" textAlign="center">
@@ -117,7 +121,7 @@ export function SelectionMode({ listId }: SelectionModeProps) {
             sx={{ minHeight: 160, py: 2 }}
           >
             <Typography variant="h1" textAlign="center">
-              {current?.ru ?? "—"}
+              {current?.sourceText ?? "—"}
             </Typography>
           </Stack>
         </CardContent>

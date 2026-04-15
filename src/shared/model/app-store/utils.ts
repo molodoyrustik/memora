@@ -1,4 +1,4 @@
-import type { List } from "@/entities/list";
+import type { LanguageCode, List } from "@/entities/list";
 import type { EncodingAttemptRound, Word } from "@/entities/word";
 import { nowISO } from "@/shared/lib/date";
 import { generateId } from "@/shared/lib/ids";
@@ -15,15 +15,15 @@ export function patchWord(
 
 export function makeWord(params: {
   listId: string;
-  ru: string;
-  en: string;
+  sourceText: string;
+  targetText: string;
 }): Word {
   const now = nowISO();
   return {
     id: generateId(),
     listId: params.listId,
-    ru: params.ru,
-    en: params.en,
+    sourceText: params.sourceText,
+    targetText: params.targetText,
     type: "image_noun",
     status: "new",
     selectionDecision: null,
@@ -42,13 +42,19 @@ export function makeWord(params: {
   };
 }
 
-export function makeList(params: { name: string }): List {
+export function makeList(params: {
+  name: string;
+  description: string | null;
+  sourceLanguage: LanguageCode;
+  targetLanguage: LanguageCode;
+}): List {
   const now = nowISO();
   return {
     id: generateId(),
     name: params.name,
-    sourceLanguage: "ru",
-    targetLanguage: "en",
+    description: params.description,
+    sourceLanguage: params.sourceLanguage,
+    targetLanguage: params.targetLanguage,
     createdAt: now,
     updatedAt: now,
   };

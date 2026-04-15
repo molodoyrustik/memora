@@ -24,8 +24,10 @@ export type EncodingAttemptRound = 1 | 2 | 3 | null;
 export type Word = {
   id: string;
   listId: string;
-  ru: string;
-  en: string;
+
+  sourceText: string;
+  targetText: string;
+
   type: WordType;
   status: WordStatus;
   selectionDecision: SelectionDecision;

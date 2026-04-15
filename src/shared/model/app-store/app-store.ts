@@ -1,10 +1,12 @@
 import { persist } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
-import type { List } from "@/entities/list";
+import type { LanguageCode, List } from "@/entities/list";
 import type { SelectionDecision, Word } from "@/entities/word";
 import { nowISO } from "@/shared/lib/date";
 
 import { makeList, makeWord, nextEncodingRound, patchWord } from "./utils";
+
+const STORE_VERSION = 2;
 
 // ---------------------------------------------------------------------------
 // State shape
@@ -16,6 +18,48 @@ type AppStoreState = {
   selectedListId: string | null;
 };
 
+function migratePersistedState(persisted: unknown): AppStoreState {
+  if (!persisted || typeof persisted !== "object") {
+    return { lists: [], words: [], selectedListId: null };
+  }
+  const p = persisted as Record<string, unknown>;
+  const listsIn = p.lists;
+  const wordsIn = p.words;
+  if (!Array.isArray(listsIn) || !Array.isArray(wordsIn)) {
+    return { lists: [], words: [], selectedListId: null };
+  }
+
+  const lists: List[] = listsIn.map((item) => {
+    const l = item as Record<string, unknown>;
+    return {
+      id: String(l.id),
+      name: String(l.name),
+      description: l.description == null ? null : String(l.description),
+      sourceLanguage: (l.sourceLanguage === "en" ? "en" : "ru") as LanguageCode,
+      targetLanguage: (l.targetLanguage === "ru" ? "ru" : "en") as LanguageCode,
+      createdAt: String(l.createdAt),
+      updatedAt: String(l.updatedAt),
+    };
+  });
+
+  const words: Word[] = wordsIn.map((item) => {
+    const w = { ...(item as Record<string, unknown>) };
+    const hasNew =
+      typeof w.sourceText === "string" && typeof w.targetText === "string";
+    const sourceText = hasNew ? String(w.sourceText) : String(w.ru ?? "");
+    const targetText = hasNew ? String(w.targetText) : String(w.en ?? "");
+    delete w.ru;
+    delete w.en;
+    return { ...w, sourceText, targetText } as Word;
+  });
+
+  return {
+    lists,
+    words,
+    selectedListId: (p.selectedListId as string | null) ?? null,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Actions
 // ---------------------------------------------------------------------------
@@ -23,16 +67,25 @@ type AppStoreState = {
 type AppStoreActions = {
   setSelectedListId: (listId: string | null) => void;
 
-  createList: (params: { name: string }) => List;
+  createList: (params: {
+    name: string;
+    description: string | null;
+    sourceLanguage: LanguageCode;
+    targetLanguage: LanguageCode;
+  }) => List;
   updateList: (
     listId: string,
     patch: Partial<Omit<List, "id" | "createdAt">>,
   ) => void;
 
-  addWordToList: (params: { listId: string; ru: string; en: string }) => Word;
+  addWordToList: (params: {
+    listId: string;
+    sourceText: string;
+    targetText: string;
+  }) => Word;
   addWordsToList: (params: {
     listId: string;
-    words: { ru: string; en: string }[];
+    words: { sourceText: string; targetText: string }[];
   }) => void;
   updateWord: (
     wordId: string,
@@ -77,8 +130,13 @@ export function createAppStore() {
 
         // --- Lists ---
 
-        createList: ({ name }) => {
-          const list: List = makeList({ name });
+        createList: ({ name, description, sourceLanguage, targetLanguage }) => {
+          const list: List = makeList({
+            name,
+            description,
+            sourceLanguage,
+            targetLanguage,
+          });
           set((s) => ({ lists: [...s.lists, list] }));
           return list;
         },
@@ -93,15 +151,15 @@ export function createAppStore() {
 
         // --- Words ---
 
-        addWordToList: ({ listId, ru, en }) => {
-          const word = makeWord({ listId, ru, en });
+        addWordToList: ({ listId, sourceText, targetText }) => {
+          const word = makeWord({ listId, sourceText, targetText });
           set((s) => ({ words: [...s.words, word] }));
           return word;
         },
 
         addWordsToList: ({ listId, words }) => {
-          const newWords = words.map(({ ru, en }) =>
-            makeWord({ listId, ru, en }),
+          const newWords = words.map(({ sourceText, targetText }) =>
+            makeWord({ listId, sourceText, targetText }),
           );
           set((s) => ({ words: [...s.words, ...newWords] }));
         },
@@ -216,6 +274,13 @@ export function createAppStore() {
       }),
       {
         name: "memora-store",
+        version: STORE_VERSION,
+        migrate: (persistedState, version) => {
+          if (version >= STORE_VERSION) {
+            return persistedState as AppStoreState;
+          }
+          return migratePersistedState(persistedState);
+        },
       },
     ),
   );

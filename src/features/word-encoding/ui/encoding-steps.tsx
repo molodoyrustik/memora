@@ -23,18 +23,33 @@ export function StepImageCheck({
     <>
       <Card>
         <CardContent>
-          <Stack alignItems="center" justifyContent="center" sx={{ minHeight: 160, py: 2 }} spacing={2}>
-            <Typography variant="h1" textAlign="center">{word.ru}</Typography>
-            <Typography variant="body2" color="text.secondary">Представь это</Typography>
+          <Stack
+            alignItems="center"
+            justifyContent="center"
+            sx={{ minHeight: 160, py: 2 }}
+            spacing={2}
+          >
+            <Typography variant="h1" textAlign="center">
+              {word.sourceText}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Представь это
+            </Typography>
             {hint && (
-              <Typography variant="caption" color="text.secondary">{hint}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {hint}
+              </Typography>
             )}
           </Stack>
         </CardContent>
       </Card>
       <Stack spacing={1.5}>
-        <Button variant="contained" fullWidth onClick={onHasImage}>Есть образ</Button>
-        <Button variant="text" fullWidth color="inherit" onClick={onSkip}>Пропустить</Button>
+        <Button variant="contained" fullWidth onClick={onHasImage}>
+          Есть образ
+        </Button>
+        <Button variant="text" fullWidth color="inherit" onClick={onSkip}>
+          Пропустить
+        </Button>
       </Stack>
     </>
   );
@@ -59,8 +74,16 @@ export function StepSoundEncoding({
         <CardContent>
           <Stack spacing={2}>
             <Stack spacing={0.5}>
-              <Typography variant="h2" textAlign="center">{word.en}</Typography>
-              <Typography variant="body2" color="text.secondary" textAlign="center">{word.ru}</Typography>
+              <Typography variant="h2" textAlign="center">
+                {word.targetText}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                textAlign="center"
+              >
+                {word.sourceText}
+              </Typography>
             </Stack>
             <TextField
               label="Звуковая ассоциация"
@@ -75,8 +98,17 @@ export function StepSoundEncoding({
         </CardContent>
       </Card>
       <Stack spacing={1.5}>
-        <Button variant="contained" fullWidth onClick={onNext} disabled={!value.trim()}>Next</Button>
-        <Button variant="text" fullWidth color="inherit" onClick={onSkip}>Skip</Button>
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={onNext}
+          disabled={!value.trim()}
+        >
+          Next
+        </Button>
+        <Button variant="text" fullWidth color="inherit" onClick={onSkip}>
+          Skip
+        </Button>
       </Stack>
     </>
   );
@@ -98,7 +130,11 @@ export function StepSceneCreation({
       <Card>
         <CardContent>
           <Stack spacing={2}>
-            <Typography variant="body2" color="text.secondary" textAlign="center">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              textAlign="center"
+            >
               Соедини два образа
             </Typography>
             <TextField
@@ -116,8 +152,17 @@ export function StepSceneCreation({
         </CardContent>
       </Card>
       <Stack spacing={1.5}>
-        <Button variant="contained" fullWidth onClick={onSave} disabled={!value.trim()}>Save</Button>
-        <Button variant="text" fullWidth color="inherit" onClick={onSkip}>Skip</Button>
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={onSave}
+          disabled={!value.trim()}
+        >
+          Save
+        </Button>
+        <Button variant="text" fullWidth color="inherit" onClick={onSkip}>
+          Skip
+        </Button>
       </Stack>
     </>
   );
@@ -140,24 +185,36 @@ export function StepFixation({
         <CardContent>
           <Stack spacing={2.5}>
             <Stack spacing={0.5} alignItems="center">
-              <Typography variant="h2">{word.en}</Typography>
-              <Typography variant="body2" color="text.secondary">{word.ru}</Typography>
+              <Typography variant="h2">{word.targetText}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {word.sourceText}
+              </Typography>
             </Stack>
             <Stack spacing={0.5}>
-              <Typography variant="caption" color="text.secondary">Ассоциация</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Ассоциация
+              </Typography>
               <Typography variant="body1">{soundAssociation}</Typography>
             </Stack>
             <Stack spacing={0.5}>
-              <Typography variant="caption" color="text.secondary">Сцена</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Сцена
+              </Typography>
               <Typography variant="body1">{sceneDescription}</Typography>
             </Stack>
-            <Typography variant="body2" color="text.secondary" textAlign="center">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              textAlign="center"
+            >
               Посмотри и проговори слово
             </Typography>
           </Stack>
         </CardContent>
       </Card>
-      <Button variant="contained" fullWidth onClick={onDone}>Done</Button>
+      <Button variant="contained" fullWidth onClick={onDone}>
+        Done
+      </Button>
     </>
   );
 }

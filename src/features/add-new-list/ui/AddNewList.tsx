@@ -6,35 +6,48 @@ import {
   CardContent,
   Container,
   Divider,
+  FormControl,
   IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/shared/model/app-store";
-import { generateId } from "@/shared/lib/ids";
+import { useRef, useState } from "react";
+import type { LanguageCode } from "@/entities/list";
 import { ImportDrawer, type ImportedWord } from "@/features/import-words";
+import { generateId } from "@/shared/lib/ids";
+import { useAppStore } from "@/shared/model/app-store";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type PreviewWord = { id: string; ru: string; en: string };
+type PreviewWord = { id: string; sourceText: string; targetText: string };
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makePreviewWord(ru: string, en: string): PreviewWord {
-  return { id: generateId(), ru, en };
+const LANGUAGE_LABELS: Record<LanguageCode, string> = {
+  ru: "Russian",
+  en: "English",
+};
+
+function makePreviewWord(sourceText: string, targetText: string): PreviewWord {
+  return { id: generateId(), sourceText, targetText };
 }
 
-function deduplicateWords(existing: PreviewWord[], incoming: ImportedWord[]): PreviewWord[] {
-  const keys = new Set(existing.map((w) => `${w.ru}||${w.en}`));
-  return incoming.filter((w) => !keys.has(`${w.ru}||${w.en}`));
+function deduplicateWords(
+  existing: PreviewWord[],
+  incoming: ImportedWord[],
+): PreviewWord[] {
+  const keys = new Set(existing.map((w) => `${w.sourceText}||${w.targetText}`));
+  return incoming.filter((w) => !keys.has(`${w.sourceText}||${w.targetText}`));
 }
 
 // ---------------------------------------------------------------------------
@@ -47,29 +60,38 @@ export function AddNewList() {
   const addWordsToList = useAppStore((state) => state.addWordsToList);
 
   const [name, setName] = useState("");
-  // TODO: add description to domain model when backend is ready
   const [description, setDescription] = useState("");
 
-  const [manualRu, setManualRu] = useState("");
-  const [manualEn, setManualEn] = useState("");
-  const ruInputRef = useRef<HTMLInputElement>(null);
+  const [sourceLanguage, setSourceLanguage] = useState<LanguageCode>("ru");
+  const [targetLanguage, setTargetLanguage] = useState<LanguageCode>("en");
+
+  const [manualSourceText, setManualSourceText] = useState("");
+  const [manualTargetText, setManualTargetText] = useState("");
+  const sourceInputRef = useRef<HTMLInputElement>(null);
 
   const [words, setWords] = useState<PreviewWord[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const canCreate = name.trim().length > 0 && words.length > 0;
+  const languagesValid = sourceLanguage !== targetLanguage;
+  const canCreate =
+    name.trim().length > 0 && words.length > 0 && languagesValid;
+
+  const sourceWordLabel = `${LANGUAGE_LABELS[sourceLanguage]} word`;
+  const targetWordLabel = `${LANGUAGE_LABELS[targetLanguage]} word`;
 
   function handleAddWord() {
-    const ru = manualRu.trim();
-    const en = manualEn.trim();
-    if (!ru || !en) return;
-    const isDuplicate = words.some((w) => w.ru === ru && w.en === en);
+    const sourceText = manualSourceText.trim();
+    const targetText = manualTargetText.trim();
+    if (!sourceText || !targetText) return;
+    const isDuplicate = words.some(
+      (w) => w.sourceText === sourceText && w.targetText === targetText,
+    );
     if (!isDuplicate) {
-      setWords((prev) => [...prev, makePreviewWord(ru, en)]);
+      setWords((prev) => [...prev, makePreviewWord(sourceText, targetText)]);
     }
-    setManualRu("");
-    setManualEn("");
-    ruInputRef.current?.focus();
+    setManualSourceText("");
+    setManualTargetText("");
+    sourceInputRef.current?.focus();
   }
 
   function handleRemoveWord(id: string) {
@@ -84,8 +106,19 @@ export function AddNewList() {
 
   function handleCreate() {
     if (!canCreate) return;
-    const list = createList({ name: name.trim() });
-    addWordsToList({ listId: list.id, words: words.map(({ ru, en }) => ({ ru, en })) });
+    const list = createList({
+      name: name.trim(),
+      description: description.trim() || null,
+      sourceLanguage,
+      targetLanguage,
+    });
+    addWordsToList({
+      listId: list.id,
+      words: words.map(({ sourceText, targetText }) => ({
+        sourceText,
+        targetText,
+      })),
+    });
     router.push(`/lists/${list.id}`);
   }
 
@@ -95,7 +128,11 @@ export function AddNewList() {
         {/* Header */}
         <Stack spacing={0.5}>
           <Link href="/lists" style={{ textDecoration: "none" }}>
-            <Button variant="text" size="small" sx={{ px: 0, minHeight: "auto" }}>
+            <Button
+              variant="text"
+              size="small"
+              sx={{ px: 0, minHeight: "auto" }}
+            >
               ← Back to Lists
             </Button>
           </Link>
@@ -125,6 +162,46 @@ export function AddNewList() {
                 multiline
                 minRows={2}
               />
+
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="source-lang-label">
+                    Source language
+                  </InputLabel>
+                  <Select
+                    labelId="source-lang-label"
+                    label="Source language"
+                    value={sourceLanguage}
+                    onChange={(e) =>
+                      setSourceLanguage(e.target.value as LanguageCode)
+                    }
+                  >
+                    <MenuItem value="ru">Russian (ru)</MenuItem>
+                    <MenuItem value="en">English (en)</MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="target-lang-label">
+                    Target language
+                  </InputLabel>
+                  <Select
+                    labelId="target-lang-label"
+                    label="Target language"
+                    value={targetLanguage}
+                    onChange={(e) =>
+                      setTargetLanguage(e.target.value as LanguageCode)
+                    }
+                  >
+                    <MenuItem value="ru">Russian (ru)</MenuItem>
+                    <MenuItem value="en">English (en)</MenuItem>
+                  </Select>
+                </FormControl>
+              </Stack>
+              {!languagesValid && (
+                <Typography variant="caption" color="text.secondary">
+                  Source and target language must be different to create a list.
+                </Typography>
+              )}
             </Stack>
           </CardContent>
         </Card>
@@ -133,9 +210,17 @@ export function AddNewList() {
         <Card>
           <CardContent>
             <Stack spacing={2}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+              >
                 <Typography variant="h3">Words</Typography>
-                <Button variant="outlined" size="small" onClick={() => setDrawerOpen(true)}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setDrawerOpen(true)}
+                >
                   + Import
                 </Button>
               </Stack>
@@ -143,28 +228,30 @@ export function AddNewList() {
               {/* Manual add row */}
               <Stack direction="row" spacing={1} alignItems="flex-start">
                 <TextField
-                  inputRef={ruInputRef}
-                  label="Russian"
-                  placeholder="кошка"
+                  inputRef={sourceInputRef}
+                  label={sourceWordLabel}
+                  placeholder="…"
                   size="small"
                   fullWidth
-                  value={manualRu}
-                  onChange={(e) => setManualRu(e.target.value)}
+                  value={manualSourceText}
+                  onChange={(e) => setManualSourceText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddWord()}
                 />
                 <TextField
-                  label="English"
-                  placeholder="cat"
+                  label={targetWordLabel}
+                  placeholder="…"
                   size="small"
                   fullWidth
-                  value={manualEn}
-                  onChange={(e) => setManualEn(e.target.value)}
+                  value={manualTargetText}
+                  onChange={(e) => setManualTargetText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddWord()}
                 />
                 <Button
                   variant="contained"
                   onClick={handleAddWord}
-                  disabled={!manualRu.trim() || !manualEn.trim()}
+                  disabled={
+                    !manualSourceText.trim() || !manualTargetText.trim()
+                  }
                   sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
                 >
                   Add
@@ -189,8 +276,12 @@ export function AddNewList() {
                         sx={{ py: 1 }}
                       >
                         <Stack direction="row" spacing={2} alignItems="center">
-                          <Typography variant="body1">{word.ru}</Typography>
-                          <Typography variant="body2" color="text.secondary">{word.en}</Typography>
+                          <Typography variant="body1">
+                            {word.sourceText}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {word.targetText}
+                          </Typography>
                         </Stack>
                         <IconButton
                           size="small"

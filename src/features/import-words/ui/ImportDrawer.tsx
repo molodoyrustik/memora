@@ -20,7 +20,11 @@ import { generateId } from "@/shared/lib/ids";
 // Types
 // ---------------------------------------------------------------------------
 
-export type ImportedWord = { id: string; ru: string; en: string };
+export type ImportedWord = {
+  id: string;
+  sourceText: string;
+  targetText: string;
+};
 
 type PairSep = "dash" | "comma" | "custom";
 type ItemSep = "newline" | "semicolon" | "custom";
@@ -41,17 +45,21 @@ function resolvePairSep(pairSep: PairSep, custom: string): string {
   return custom;
 }
 
-function parseWords(raw: string, pairSep: string, itemSep: string): ImportedWord[] {
+function parseWords(
+  raw: string,
+  pairSep: string,
+  itemSep: string,
+): ImportedWord[] {
   if (!raw.trim() || !pairSep || !itemSep) return [];
   return raw
     .split(itemSep)
     .map((item) => {
       const idx = item.indexOf(pairSep);
       if (idx === -1) return null;
-      const ru = item.slice(0, idx).trim();
-      const en = item.slice(idx + pairSep.length).trim();
-      if (!ru || !en) return null;
-      return { id: generateId(), ru, en };
+      const sourceText = item.slice(0, idx).trim();
+      const targetText = item.slice(idx + pairSep.length).trim();
+      if (!sourceText || !targetText) return null;
+      return { id: generateId(), sourceText, targetText };
     })
     .filter((w): w is ImportedWord => w !== null);
 }
@@ -92,9 +100,15 @@ export function ImportDrawer({ open, onClose, onImport }: ImportDrawerProps) {
     >
       <Stack spacing={3} sx={{ height: "100%", overflowY: "auto" }}>
         {/* Header */}
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
           <Typography variant="h2">Import words</Typography>
-          <IconButton onClick={onClose} size="small" aria-label="Close">✕</IconButton>
+          <IconButton onClick={onClose} size="small" aria-label="Close">
+            ✕
+          </IconButton>
         </Stack>
 
         {/* Textarea */}
@@ -115,7 +129,7 @@ export function ImportDrawer({ open, onClose, onImport }: ImportDrawerProps) {
         {/* Pair separator */}
         <Stack spacing={1}>
           <Typography variant="body2" color="text.secondary">
-            Pair separator (RU — EN)
+            Pair separator (source — target)
           </Typography>
           <Select
             value={pairSep}
@@ -169,9 +183,13 @@ export function ImportDrawer({ open, onClose, onImport }: ImportDrawerProps) {
           <CardContent sx={{ py: 1.5 }}>
             <Stack spacing={0.5}>
               <Typography variant="caption" color="text.secondary">
-                Format: Russian {resolvedPairSep || "—"} English
+                Format: source {resolvedPairSep || "—"} target
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "pre-line" }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ whiteSpace: "pre-line" }}
+              >
                 {`Example:\nсобака${resolvedPairSep || "-"}dog\nкошка${resolvedPairSep || "-"}cat`}
               </Typography>
             </Stack>
@@ -194,9 +212,16 @@ export function ImportDrawer({ open, onClose, onImport }: ImportDrawerProps) {
               sx={{ maxHeight: 200, overflowY: "auto" }}
             >
               {parsed.map((w) => (
-                <Stack key={w.id} direction="row" justifyContent="space-between" sx={{ py: 0.75 }}>
-                  <Typography variant="body2">{w.ru}</Typography>
-                  <Typography variant="body2" color="text.secondary">{w.en}</Typography>
+                <Stack
+                  key={w.id}
+                  direction="row"
+                  justifyContent="space-between"
+                  sx={{ py: 0.75 }}
+                >
+                  <Typography variant="body2">{w.sourceText}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {w.targetText}
+                  </Typography>
                 </Stack>
               ))}
             </Stack>

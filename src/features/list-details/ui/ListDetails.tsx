@@ -7,11 +7,10 @@ import {
   Chip,
   Divider,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { WordStatus } from "@/entities/word/model/types";
 import {
   isInDictionaryQueue,
@@ -50,12 +49,8 @@ const STATUS_COLORS: Record<
 };
 
 export function ListDetails({ listId }: ListDetailsProps) {
-  const [ru, setRu] = useState("");
-  const [en, setEn] = useState("");
-
   const lists = useAppStore((state) => state.lists);
   const allWords = useAppStore((state) => state.words);
-  const addWordToList = useAppStore((state) => state.addWordToList);
 
   const list = useMemo(
     () => lists.find((l) => l.id === listId),
@@ -86,15 +81,6 @@ export function ListDetails({ listId }: ListDetailsProps) {
       ),
     [words],
   );
-
-  function handleAddWord() {
-    const trimRu = ru.trim();
-    const trimEn = en.trim();
-    if (!trimRu || !trimEn) return;
-    addWordToList({ listId, ru: trimRu, en: trimEn });
-    setRu("");
-    setEn("");
-  }
 
   if (!list) {
     return (
@@ -179,6 +165,14 @@ export function ListDetails({ listId }: ListDetailsProps) {
         </Link>
         <Typography variant="h1">{list.name}</Typography>
         <Typography variant="body2" color="text.secondary">
+          {list.sourceLanguage} → {list.targetLanguage}
+        </Typography>
+        {list.description && (
+          <Typography variant="body2" color="text.secondary">
+            {list.description}
+          </Typography>
+        )}
+        <Typography variant="body2" color="text.secondary">
           {words.length} {words.length === 1 ? "word" : "words"} total
         </Typography>
       </Stack>
@@ -238,51 +232,17 @@ export function ListDetails({ listId }: ListDetailsProps) {
         </CardContent>
       </Card>
 
-      {/* Add Word */}
-      <Card>
-        <CardContent>
-          <Stack spacing={2}>
-            <Typography variant="h3">Add Word</Typography>
-            <Stack direction="row" spacing={1.5}>
-              <TextField
-                label="Russian"
-                placeholder="кошка"
-                value={ru}
-                onChange={(e) => setRu(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddWord()}
-                size="small"
-                fullWidth
-              />
-              <TextField
-                label="English"
-                placeholder="cat"
-                value={en}
-                onChange={(e) => setEn(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddWord()}
-                size="small"
-                fullWidth
-              />
-              <Button
-                variant="contained"
-                onClick={handleAddWord}
-                disabled={!ru.trim() || !en.trim()}
-                sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
-              >
-                Add
-              </Button>
-            </Stack>
-          </Stack>
-        </CardContent>
-      </Card>
-
       {/* Words list */}
       <Card>
         <CardContent>
           <Stack spacing={1.5}>
             <Typography variant="h3">Words</Typography>
+            <Typography variant="caption" color="text.secondary">
+              This list is read-only. To add new words, create a new list.
+            </Typography>
             {words.length === 0 ? (
               <Typography variant="body1" color="text.secondary">
-                No words yet. Add the first one above.
+                No words in this list.
               </Typography>
             ) : (
               <Stack spacing={0} divider={<Divider />}>
@@ -295,9 +255,9 @@ export function ListDetails({ listId }: ListDetailsProps) {
                     sx={{ py: 1.25 }}
                   >
                     <Stack direction="row" spacing={2} alignItems="center">
-                      <Typography variant="body1">{word.ru}</Typography>
+                      <Typography variant="body1">{word.sourceText}</Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {word.en}
+                        {word.targetText}
                       </Typography>
                     </Stack>
                     <Chip

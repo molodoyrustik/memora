@@ -1,1 +1,1 @@
-export { EncodingMode } from './ui/EncodingMode';
+export { EncodingMode } from "./ui/EncodingMode";

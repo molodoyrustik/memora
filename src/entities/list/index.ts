@@ -1,1 +1,1 @@
-export type { List } from "./model/types";
+export type { LanguageCode, List } from "./model/types";

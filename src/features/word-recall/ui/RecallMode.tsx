@@ -25,14 +25,21 @@ export function RecallMode({ listId }: RecallModeProps) {
   const allWordsRef = useRef(allWords);
   const [queue, setQueue] = useState<string[]>(() =>
     allWordsRef.current
-      .filter((w) => w.listId === listId && (RECALL_STATUSES as readonly string[]).includes(w.status))
+      .filter(
+        (w) =>
+          w.listId === listId &&
+          (RECALL_STATUSES as readonly string[]).includes(w.status),
+      )
       .map((w) => w.id),
   );
 
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
   const [doneCount, setDoneCount] = useState(0);
 
-  const wordsMap = useMemo(() => new Map(allWords.map((w) => [w.id, w])), [allWords]);
+  const wordsMap = useMemo(
+    () => new Map(allWords.map((w) => [w.id, w])),
+    [allWords],
+  );
 
   const total = queue.length;
   const currentId = queue[0] ?? null;
@@ -58,7 +65,12 @@ export function RecallMode({ listId }: RecallModeProps) {
 
   if (total === 0) {
     return (
-      <Stack spacing={3} alignItems="center" justifyContent="center" sx={{ minHeight: "60vh" }}>
+      <Stack
+        spacing={3}
+        alignItems="center"
+        justifyContent="center"
+        sx={{ minHeight: "60vh" }}
+      >
         <Stack spacing={1} alignItems="center">
           <Typography variant="h2">Nothing to recall</Typography>
           <Typography variant="body1" color="text.secondary" textAlign="center">
@@ -74,7 +86,12 @@ export function RecallMode({ listId }: RecallModeProps) {
 
   if (!current) {
     return (
-      <Stack spacing={3} alignItems="center" justifyContent="center" sx={{ minHeight: "60vh" }}>
+      <Stack
+        spacing={3}
+        alignItems="center"
+        justifyContent="center"
+        sx={{ minHeight: "60vh" }}
+      >
         <Stack spacing={1} alignItems="center">
           <Typography variant="h2">Recall complete</Typography>
           <Typography variant="body1" color="text.secondary" textAlign="center">
@@ -106,10 +123,10 @@ export function RecallMode({ listId }: RecallModeProps) {
       <Card>
         <CardContent>
           <Stack spacing={2.5}>
-            {/* RU word */}
+            {/* Source (prompt) */}
             <Stack spacing={0.5} alignItems="center">
               <Typography variant="h1" textAlign="center">
-                {current.ru}
+                {current.sourceText}
               </Typography>
             </Stack>
 
@@ -121,7 +138,9 @@ export function RecallMode({ listId }: RecallModeProps) {
                   <Typography variant="caption" color="text.secondary">
                     Сцена
                   </Typography>
-                  <Typography variant="body1">{current.sceneDescription}</Typography>
+                  <Typography variant="body1">
+                    {current.sceneDescription}
+                  </Typography>
                 </Stack>
               </>
             )}
@@ -132,11 +151,17 @@ export function RecallMode({ listId }: RecallModeProps) {
                 <Typography variant="caption" color="text.secondary">
                   Ассоциация
                 </Typography>
-                <Typography variant="body1">{current.soundAssociation}</Typography>
+                <Typography variant="body1">
+                  {current.soundAssociation}
+                </Typography>
               </Stack>
             )}
 
-            <Typography variant="body2" color="text.secondary" textAlign="center">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              textAlign="center"
+            >
               Какое это слово?
             </Typography>
 
@@ -146,7 +171,7 @@ export function RecallMode({ listId }: RecallModeProps) {
                 <Divider />
                 <Stack alignItems="center" sx={{ py: 1 }}>
                   <Typography variant="h2" color="primary">
-                    {current.en}
+                    {current.targetText}
                   </Typography>
                 </Stack>
               </>
@@ -157,7 +182,11 @@ export function RecallMode({ listId }: RecallModeProps) {
 
       {/* Actions */}
       {!isAnswerVisible ? (
-        <Button variant="contained" fullWidth onClick={() => setIsAnswerVisible(true)}>
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={() => setIsAnswerVisible(true)}
+        >
           Show Answer
         </Button>
       ) : (
