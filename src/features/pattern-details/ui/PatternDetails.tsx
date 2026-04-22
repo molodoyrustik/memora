@@ -1,0 +1,359 @@
+"use client";
+
+import {
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Divider,
+  Stack,
+  Typography,
+} from "@mui/material";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import type { SentenceStatus } from "@/entities/pattern";
+import {
+  ImportSentencesDrawer,
+  type ImportedSentence,
+} from "@/features/import-sentences";
+import {
+  getFirstPassQueue,
+  getFullPracticeQueue,
+  getMarkedQueue,
+  usePatternsStore,
+} from "@/shared/model/patterns-store";
+
+type PatternDetailsProps = {
+  patternId: string;
+};
+
+const STATUS_LABELS: Record<SentenceStatus, string> = {
+  new: "New",
+  marked: "Marked",
+  learning: "Learning",
+};
+
+const STATUS_COLORS: Record<
+  SentenceStatus,
+  "default" | "primary" | "warning" | "success"
+> = {
+  new: "default",
+  marked: "warning",
+  learning: "success",
+};
+
+function formatDuration(sec: number): string {
+  if (sec < 60) return `${sec}s`;
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return s > 0 ? `${m} min ${s}s` : `${m} min`;
+}
+
+export function PatternDetails({ patternId }: PatternDetailsProps) {
+  const patterns = usePatternsStore((s) => s.patterns);
+  const allSentences = usePatternsStore((s) => s.patternSentences);
+  const patternRuns = usePatternsStore((s) => s.patternRuns);
+  const addSentencesBulk = usePatternsStore((s) => s.addSentencesBulk);
+  const deleteSentence = usePatternsStore((s) => s.deleteSentence);
+  const deletePattern = usePatternsStore((s) => s.deletePattern);
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const pattern = useMemo(
+    () => patterns.find((p) => p.id === patternId),
+    [patterns, patternId],
+  );
+  const sentences = useMemo(
+    () => allSentences.filter((s) => s.patternId === patternId),
+    [allSentences, patternId],
+  );
+  const runs = useMemo(
+    () =>
+      patternRuns
+        .filter((r) => r.patternId === patternId)
+        .sort(
+          (a, b) =>
+            new Date(a.completedAt).getTime() -
+            new Date(b.completedAt).getTime(),
+        ),
+    [patternRuns, patternId],
+  );
+
+  const firstPassCount = useMemo(
+    () => getFirstPassQueue(allSentences, patternId).length,
+    [allSentences, patternId],
+  );
+  const markedCount = useMemo(
+    () => getMarkedQueue(allSentences, patternId).length,
+    [allSentences, patternId],
+  );
+  const fullPracticeCount = useMemo(
+    () => getFullPracticeQueue(allSentences, patternId).length,
+    [allSentences, patternId],
+  );
+
+  function handleImport(imported: ImportedSentence[]) {
+    addSentencesBulk({
+      patternId,
+      sentences: imported.map(({ sourceText, targetText }) => ({
+        sourceText,
+        targetText,
+      })),
+    });
+    setDrawerOpen(false);
+  }
+
+  if (!pattern) {
+    return (
+      <Stack spacing={2}>
+        <Typography variant="body1" color="text.secondary">
+          Pattern not found.
+        </Typography>
+        <Link href="/patterns" style={{ textDecoration: "none" }}>
+          <Button variant="outlined">Back to Patterns</Button>
+        </Link>
+      </Stack>
+    );
+  }
+
+  const modes = [
+    {
+      label: "First Pass",
+      description: "Process new sentences",
+      href: `/patterns/${patternId}/first-pass`,
+      count: firstPassCount,
+    },
+    {
+      label: "Review Marked",
+      description: "Fix hesitations and mistakes",
+      href: `/patterns/${patternId}/review`,
+      count: markedCount,
+    },
+    {
+      label: "Full Practice",
+      description: "Timed full-set run",
+      href: `/patterns/${patternId}/full-practice`,
+      count: fullPracticeCount,
+    },
+  ] as const;
+
+  return (
+    <>
+      {/* Header */}
+      <Stack spacing={0.5}>
+        <Link href="/patterns" style={{ textDecoration: "none" }}>
+          <Button variant="text" size="small" sx={{ px: 0, minHeight: "auto" }}>
+            ← Back to Patterns
+          </Button>
+        </Link>
+        <Typography variant="h1">{pattern.name}</Typography>
+        {pattern.description && (
+          <Typography variant="body2" color="text.secondary">
+            {pattern.description}
+          </Typography>
+        )}
+        <Typography variant="body2" color="text.secondary">
+          {sentences.length}{" "}
+          {sentences.length === 1 ? "sentence" : "sentences"} total
+        </Typography>
+      </Stack>
+
+      {/* Status summary */}
+      <Card>
+        <CardContent>
+          <Stack spacing={1.5}>
+            <Typography variant="h3">Summary</Typography>
+            <Stack direction="row" flexWrap="wrap" gap={1}>
+              {(["new", "marked", "learning"] as SentenceStatus[]).map(
+                (status) => {
+                  const count = sentences.filter(
+                    (s) => s.status === status,
+                  ).length;
+                  return (
+                    <Chip
+                      key={status}
+                      label={`${STATUS_LABELS[status]}: ${count}`}
+                      size="small"
+                      variant={count > 0 ? "filled" : "outlined"}
+                      color={count > 0 ? STATUS_COLORS[status] : "default"}
+                    />
+                  );
+                },
+              )}
+            </Stack>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      {/* Modes */}
+      <Card>
+        <CardContent>
+          <Stack spacing={2}>
+            <Typography variant="h3">Modes</Typography>
+            <Stack spacing={1.5}>
+              {modes.map(({ label, description, href, count }) => (
+                <Link
+                  key={href}
+                  href={count > 0 ? href : "#"}
+                  style={{ textDecoration: "none" }}
+                  aria-disabled={count === 0}
+                  onClick={(e) => count === 0 && e.preventDefault()}
+                >
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    disabled={count === 0}
+                    sx={{ justifyContent: "space-between", textAlign: "left" }}
+                  >
+                    <Stack alignItems="flex-start" spacing={0}>
+                      <span>{label}</span>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        component="span"
+                      >
+                        {description}
+                      </Typography>
+                    </Stack>
+                    <Chip
+                      label={count}
+                      size="small"
+                      color={count > 0 ? "primary" : "default"}
+                      sx={{ pointerEvents: "none" }}
+                    />
+                  </Button>
+                </Link>
+              ))}
+            </Stack>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      {/* Full Practice run history */}
+      {runs.length > 0 && (
+        <Card>
+          <CardContent>
+            <Stack spacing={1.5}>
+              <Typography variant="h3">Full Practice history</Typography>
+              <Stack spacing={0} divider={<Divider />}>
+                {runs.map((run, i) => (
+                  <Stack
+                    key={run.id}
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ py: 1 }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Run {i + 1}
+                    </Typography>
+                    <Typography variant="body2" fontWeight={500}>
+                      {formatDuration(run.durationSec)}
+                    </Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sentences list */}
+      <Card>
+        <CardContent>
+          <Stack spacing={1.5}>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Typography variant="h3">Sentences</Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setDrawerOpen(true)}
+              >
+                + Import
+              </Button>
+            </Stack>
+
+            {sentences.length === 0 ? (
+              <Typography variant="body1" color="text.secondary">
+                No sentences yet.
+              </Typography>
+            ) : (
+              <Stack spacing={0} divider={<Divider />}>
+                {sentences.map((s) => (
+                  <Stack
+                    key={s.id}
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="flex-start"
+                    sx={{ py: 1.25 }}
+                    gap={2}
+                  >
+                    <Stack spacing={0.25} sx={{ flex: 1 }}>
+                      <Typography variant="body1">{s.sourceText}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {s.targetText}
+                      </Typography>
+                      {s.comment && (
+                        <Typography variant="caption" color="text.secondary">
+                          {s.comment}
+                        </Typography>
+                      )}
+                    </Stack>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      flexShrink={0}
+                    >
+                      <Chip
+                        label={STATUS_LABELS[s.status]}
+                        size="small"
+                        color={STATUS_COLORS[s.status]}
+                        variant="outlined"
+                      />
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={() => deleteSentence(s.id)}
+                      >
+                        ✕
+                      </Button>
+                    </Stack>
+                  </Stack>
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        </CardContent>
+      </Card>
+
+      {/* Danger zone */}
+      <Card variant="outlined">
+        <CardContent>
+          <Stack spacing={1.5}>
+            <Typography variant="h3">Danger zone</Typography>
+            <Button
+              variant="outlined"
+              color="error"
+              component={Link}
+              href="/patterns"
+              onClick={() => deletePattern(patternId)}
+            >
+              Delete pattern
+            </Button>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      <ImportSentencesDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onImport={handleImport}
+      />
+    </>
+  );
+}

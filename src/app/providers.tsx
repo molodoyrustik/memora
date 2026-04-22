@@ -5,6 +5,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import type { ReactNode } from "react";
 import { AppStoreProvider } from "@/shared/model/app-store";
 import { CharacteristicsStoreProvider } from "@/shared/model/characteristics-store";
+import { PatternsStoreProvider } from "@/shared/model/patterns-store";
 import { AppTopNav } from "@/shared/ui/AppTopNav";
 import { theme } from "@/theme/theme";
 
@@ -19,8 +20,10 @@ export function Providers({ children }: ProvidersProps) {
         <CssBaseline />
         <AppStoreProvider>
           <CharacteristicsStoreProvider>
-            <AppTopNav />
-            {children}
+            <PatternsStoreProvider>
+              <AppTopNav />
+              {children}
+            </PatternsStoreProvider>
           </CharacteristicsStoreProvider>
         </AppStoreProvider>
       </ThemeProvider>

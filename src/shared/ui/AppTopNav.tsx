@@ -29,6 +29,9 @@ export function AppTopNav() {
           <Button component={Link} href="/lists" color="inherit">
             Lists
           </Button>
+          <Button component={Link} href="/patterns" color="inherit">
+            Patterns
+          </Button>
           <Button component={Link} href="/characteristics" color="inherit">
             Characteristics
           </Button>
