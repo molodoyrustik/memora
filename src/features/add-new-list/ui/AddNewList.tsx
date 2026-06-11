@@ -22,6 +22,7 @@ import type { LanguageCode } from "@/entities/list";
 import { ImportDrawer, type ImportedWord } from "@/features/import-words";
 import { generateId } from "@/shared/lib/ids";
 import { useAppStore } from "@/shared/model/app-store";
+import { useCoursesStore } from "@/shared/model/courses-store";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,10 +55,17 @@ function deduplicateWords(
 // Component
 // ---------------------------------------------------------------------------
 
-export function AddNewList() {
+type AddNewListProps = {
+  lessonId?: string;
+  courseId?: string;
+};
+
+export function AddNewList({ lessonId, courseId }: AddNewListProps = {}) {
   const router = useRouter();
   const createList = useAppStore((state) => state.createList);
   const addWordsToList = useAppStore((state) => state.addWordsToList);
+  const addWordListToLesson = useCoursesStore((s) => s.addWordListToLesson);
+  const fromLesson = !!(lessonId && courseId);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -119,7 +127,12 @@ export function AddNewList() {
         targetText,
       })),
     });
-    router.push(`/lists/${list.id}`);
+    if (fromLesson) {
+      addWordListToLesson(lessonId!, list.id);
+      router.push(`/courses/${courseId}/lessons/${lessonId}`);
+    } else {
+      router.push(`/lists/${list.id}`);
+    }
   }
 
   return (
@@ -127,15 +140,18 @@ export function AddNewList() {
       <Stack spacing={3}>
         {/* Header */}
         <Stack spacing={0.5}>
-          <Link href="/lists" style={{ textDecoration: "none" }}>
-            <Button
-              variant="text"
-              size="small"
-              sx={{ px: 0, minHeight: "auto" }}
-            >
-              ← Back to Lists
-            </Button>
-          </Link>
+          <Button
+            variant="text"
+            size="small"
+            sx={{ px: 0, minHeight: "auto" }}
+            onClick={() =>
+              fromLesson
+                ? router.push(`/courses/${courseId}/lessons/${lessonId}`)
+                : router.push("/lists")
+            }
+          >
+            {fromLesson ? "← Back to lesson" : "← Back to Lists"}
+          </Button>
           <Typography variant="h1">Create list</Typography>
         </Stack>
 

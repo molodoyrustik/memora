@@ -18,6 +18,7 @@ import {
   type ImportedSentence,
 } from "@/features/import-sentences";
 import { generateId } from "@/shared/lib/ids";
+import { useCoursesStore } from "@/shared/model/courses-store";
 import { usePatternsStore } from "@/shared/model/patterns-store";
 
 // ---------------------------------------------------------------------------
@@ -50,10 +51,17 @@ function deduplicateSentences(
 // Component
 // ---------------------------------------------------------------------------
 
-export function AddNewPattern() {
+type AddNewPatternProps = {
+  lessonId?: string;
+  courseId?: string;
+};
+
+export function AddNewPattern({ lessonId, courseId }: AddNewPatternProps = {}) {
   const router = useRouter();
   const createPattern = usePatternsStore((s) => s.createPattern);
   const addSentencesBulk = usePatternsStore((s) => s.addSentencesBulk);
+  const addPatternListToLesson = useCoursesStore((s) => s.addPatternListToLesson);
+  const fromLesson = !!(lessonId && courseId);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -108,7 +116,12 @@ export function AddNewPattern() {
         targetText,
       })),
     });
-    router.push(`/patterns/${pattern.id}`);
+    if (fromLesson) {
+      addPatternListToLesson(lessonId!, pattern.id);
+      router.push(`/courses/${courseId}/lessons/${lessonId}`);
+    } else {
+      router.push(`/patterns/${pattern.id}`);
+    }
   }
 
   return (
@@ -116,15 +129,18 @@ export function AddNewPattern() {
       <Stack spacing={3}>
         {/* Header */}
         <Stack spacing={0.5}>
-          <Link href="/patterns" style={{ textDecoration: "none" }}>
-            <Button
-              variant="text"
-              size="small"
-              sx={{ px: 0, minHeight: "auto" }}
-            >
-              ← Back to Patterns
-            </Button>
-          </Link>
+          <Button
+            variant="text"
+            size="small"
+            sx={{ px: 0, minHeight: "auto" }}
+            onClick={() =>
+              fromLesson
+                ? router.push(`/courses/${courseId}/lessons/${lessonId}`)
+                : router.push("/patterns")
+            }
+          >
+            {fromLesson ? "← Back to lesson" : "← Back to Patterns"}
+          </Button>
           <Typography variant="h1">Create pattern</Typography>
         </Stack>
 

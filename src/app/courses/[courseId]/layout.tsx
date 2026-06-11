@@ -1,0 +1,14 @@
+import { Container, Stack } from "@mui/material";
+import type { ReactNode } from "react";
+
+type CourseLayoutProps = {
+  children: ReactNode;
+};
+
+export default function CourseLayout({ children }: CourseLayoutProps) {
+  return (
+    <Container sx={{ py: 4 }}>
+      <Stack spacing={3}>{children}</Stack>
+    </Container>
+  );
+}

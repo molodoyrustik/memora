@@ -1,10 +1,15 @@
 import { Container } from "@mui/material";
 import { AddNewPattern } from "@/features/add-new-pattern";
 
-export default function NewPatternPage() {
+type NewPatternPageProps = {
+  searchParams: Promise<{ lessonId?: string; courseId?: string }>;
+};
+
+export default async function NewPatternPage({ searchParams }: NewPatternPageProps) {
+  const { lessonId, courseId } = await searchParams;
   return (
     <Container>
-      <AddNewPattern />
+      <AddNewPattern lessonId={lessonId} courseId={courseId} />
     </Container>
   );
 }

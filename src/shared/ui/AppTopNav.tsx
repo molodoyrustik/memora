@@ -35,6 +35,9 @@ export function AppTopNav() {
           <Button component={Link} href="/characteristics" color="inherit">
             Characteristics
           </Button>
+          <Button component={Link} href="/courses" color="inherit">
+            Courses
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>
